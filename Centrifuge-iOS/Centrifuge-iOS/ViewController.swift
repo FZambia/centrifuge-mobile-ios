@@ -66,7 +66,7 @@ class ViewController: UIViewController {
         
         label.text = "Connecting..."
         
-        DispatchQueue.main.async{
+        DispatchQueue.global(qos: .background).async {
 //            let creds = CentrifugeNewCredentials(...)
             
             let eventHandler = CentrifugeNewEventHub()
@@ -79,6 +79,9 @@ class ViewController: UIViewController {
             eventHandler?.onDisconnect(disconnectHandler)
             
             let url = "ws://localhost:8000/connection/websocket"
+//            let url = "ws://localhost:8000/connection/websocket?format=protobuf"
+//            let url = "grpc://localhost:8001"
+            
             let client = CentrifugeNew(url, eventHandler, CentrifugeDefaultConfig())
 //            client?.setCredentials(creds)
             
@@ -88,9 +91,7 @@ class ViewController: UIViewController {
                 self.label.text = "Error on connect..."
                 return
             }
-            
-            self.label.text = "Connected"
-            
+
             let subEventHandler = CentrifugeNewSubscriptionEventHub()
             let publishHandler = PublishHandler()
             publishHandler.setLabel(l: self.label)
