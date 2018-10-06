@@ -14,7 +14,7 @@
 		263C3F7020A0E18C00EA7A2E /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 263C3F6E20A0E18C00EA7A2E /* LaunchScreen.storyboard */; };
 		263C3F7B20A0E18C00EA7A2E /* Centrifuge_iOSTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263C3F7A20A0E18C00EA7A2E /* Centrifuge_iOSTests.swift */; };
 		263C3F8620A0E18C00EA7A2E /* Centrifuge_iOSUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263C3F8520A0E18C00EA7A2E /* Centrifuge_iOSUITests.swift */; };
-		263C3F9420A0E20300EA7A2E /* Centrifuge.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 263C3F9320A0E20300EA7A2E /* Centrifuge.framework */; };
+		2660F5EB2168DFAD0036A3B4 /* Centrifuge.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2660F5EA2168DFAC0036A3B4 /* Centrifuge.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,7 +48,7 @@
 		263C3F8120A0E18C00EA7A2E /* Centrifuge-iOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Centrifuge-iOSUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		263C3F8520A0E18C00EA7A2E /* Centrifuge_iOSUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Centrifuge_iOSUITests.swift; sourceTree = "<group>"; };
 		263C3F8720A0E18C00EA7A2E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		263C3F9320A0E20300EA7A2E /* Centrifuge.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Centrifuge.framework; sourceTree = "<group>"; };
+		2660F5EA2168DFAC0036A3B4 /* Centrifuge.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Centrifuge.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,7 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				263C3F9420A0E20300EA7A2E /* Centrifuge.framework in Frameworks */,
+				2660F5EB2168DFAD0036A3B4 /* Centrifuge.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -80,7 +80,7 @@
 		263C3F5920A0E18A00EA7A2E = {
 			isa = PBXGroup;
 			children = (
-				263C3F9320A0E20300EA7A2E /* Centrifuge.framework */,
+				2660F5EA2168DFAC0036A3B4 /* Centrifuge.framework */,
 				263C3F6420A0E18A00EA7A2E /* Centrifuge-iOS */,
 				263C3F7920A0E18C00EA7A2E /* Centrifuge-iOSTests */,
 				263C3F8420A0E18C00EA7A2E /* Centrifuge-iOSUITests */,
