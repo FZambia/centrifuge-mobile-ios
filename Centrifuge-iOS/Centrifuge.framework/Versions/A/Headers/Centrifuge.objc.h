@@ -14,7 +14,6 @@
 @class CentrifugeClientInfo;
 @class CentrifugeConfig;
 @class CentrifugeConnectEvent;
-@class CentrifugeCredentials;
 @class CentrifugeDisconnectEvent;
 @class CentrifugeErrorEvent;
 @class CentrifugeEventHub;
@@ -23,6 +22,7 @@
 @class CentrifugeLeaveEvent;
 @class CentrifugeMessageEvent;
 @class CentrifugePresenceData;
+@class CentrifugePresenceStats;
 @class CentrifugePrivateSign;
 @class CentrifugePrivateSubEvent;
 @class CentrifugePublication;
@@ -82,7 +82,7 @@
 @end
 
 @protocol CentrifugePrivateSubHandler <NSObject>
-- (CentrifugePrivateSign*)onPrivateSub:(CentrifugeClient*)p0 p1:(CentrifugePrivateSubEvent*)p1 error:(NSError**)error;
+- (NSString*)onPrivateSub:(CentrifugeClient*)p0 p1:(CentrifugePrivateSubEvent*)p1 error:(NSError**)error;
 @end
 
 @protocol CentrifugePublishHandler <NSObject>
@@ -90,7 +90,7 @@
 @end
 
 @protocol CentrifugeRefreshHandler <NSObject>
-- (CentrifugeCredentials*)onRefresh:(CentrifugeClient*)p0 error:(NSError**)error;
+- (NSString*)onRefresh:(CentrifugeClient*)p0 error:(NSError**)error;
 @end
 
 @protocol CentrifugeSubscribeErrorHandler <NSObject>
@@ -105,23 +105,86 @@
 - (void)onUnsubscribe:(CentrifugeSubscription*)p0 p1:(CentrifugeUnsubscribeEvent*)p1;
 @end
 
+/**
+ * Client to connect to Centrifuge-based server or Centrifugo.
+ */
 @interface CentrifugeClient : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
 
 - (instancetype)initWithRef:(id)ref;
 - (instancetype)init;
+/**
+ * Close closes Client connection and cleans ups everything.
+ */
 - (BOOL)close:(NSError**)error;
+/**
+ * Connect dials to server and sends connect message.
+ */
 - (BOOL)connect:(NSError**)error;
+/**
+ * Disconnect client from server.
+ */
 - (BOOL)disconnect:(NSError**)error;
+/**
+ * NewSubscription allows to create new Subscription to channel.
+ */
+- (CentrifugeSubscription*)newSubscription:(NSString*)channel error:(NSError**)error;
+/**
+ * OnConnect is a function to handle connect event.
+ */
+- (void)onConnect:(id<CentrifugeConnectHandler>)handler;
+/**
+ * OnDisconnect is a function to handle disconnect event.
+ */
+- (void)onDisconnect:(id<CentrifugeDisconnectHandler>)handler;
+/**
+ * OnError is a function that will receive unhandled errors for logging.
+ */
+- (void)onError:(id<CentrifugeErrorHandler>)handler;
+/**
+ * OnMessage allows to process async message from server to client.
+ */
+- (void)onMessage:(id<CentrifugeMessageHandler>)handler;
+/**
+ * OnPrivateSub needed to handle private channel subscriptions.
+ */
+- (void)onPrivateSub:(id<CentrifugePrivateSubHandler>)handler;
+/**
+ * OnRefresh handles refresh event when client's credentials expired and must be refreshed.
+ */
+- (void)onRefresh:(id<CentrifugeRefreshHandler>)handler;
+/**
+ * Publish data into channel.
+ */
+- (BOOL)publish:(NSString*)channel data:(NSData*)data error:(NSError**)error;
+/**
+ * RPC allows to make RPC – send data to server ant wait for response.
+RPC handler must be registered on server.
+ */
 - (NSData*)rpc:(NSData*)data error:(NSError**)error;
+/**
+ * Send data to server asynchronously.
+ */
 - (BOOL)send:(NSData*)data error:(NSError**)error;
+/**
+ * SetConnectData allows to set data to send in connect message.
+ */
 - (void)setConnectData:(NSData*)data;
-- (void)setCredentials:(CentrifugeCredentials*)creds;
-- (CentrifugeSubscription*)subscribe:(NSString*)channel events:(CentrifugeSubscriptionEventHub*)events error:(NSError**)error;
-- (CentrifugeSubscription*)subscribeSync:(NSString*)channel events:(CentrifugeSubscriptionEventHub*)events error:(NSError**)error;
+/**
+ * SetHeader allows to set custom header sent in Upgrade HTTP request.
+ */
+- (void)setHeader:(NSString*)key value:(NSString*)value;
+/**
+ * SetToken allows to set connection token so client
+authenticate itself on connect.
+ */
+- (void)setToken:(NSString*)token;
 @end
 
+/**
+ * ClientInfo ...
+ */
 @interface CentrifugeClientInfo : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
@@ -138,6 +201,9 @@
 - (void)setChanInfo:(NSData*)v;
 @end
 
+/**
+ * Config contains various client options.
+ */
 @interface CentrifugeConfig : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
@@ -154,6 +220,9 @@
 - (void)setPrivateChannelPrefix:(NSString*)v;
 @end
 
+/**
+ * ConnectEvent is a connect event context passed to OnConnect callback.
+ */
 @interface CentrifugeConnectEvent : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
@@ -168,22 +237,9 @@
 - (void)setData:(NSData*)v;
 @end
 
-@interface CentrifugeCredentials : NSObject <goSeqRefInterface> {
-}
-@property(strong, readonly) id _ref;
-
-- (instancetype)initWithRef:(id)ref;
-- (instancetype)init:(NSString*)user exp:(NSString*)exp info:(NSString*)info sign:(NSString*)sign;
-- (NSString*)user;
-- (void)setUser:(NSString*)v;
-- (NSString*)exp;
-- (void)setExp:(NSString*)v;
-- (NSString*)info;
-- (void)setInfo:(NSString*)v;
-- (NSString*)sign;
-- (void)setSign:(NSString*)v;
-@end
-
+/**
+ * DisconnectEvent is a disconnect event context passed to OnDisconnect callback.
+ */
 @interface CentrifugeDisconnectEvent : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
@@ -196,6 +252,9 @@
 - (void)setReconnect:(BOOL)v;
 @end
 
+/**
+ * ErrorEvent is an error event context passed to OnError callback.
+ */
 @interface CentrifugeErrorEvent : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
@@ -206,30 +265,42 @@
 - (void)setMessage:(NSString*)v;
 @end
 
+/**
+ * EventHub ...
+ */
 @interface CentrifugeEventHub : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
 
 - (instancetype)initWithRef:(id)ref;
+/**
+ * NewEventHub ...
+ */
 - (instancetype)init;
-- (void)onConnect:(id<CentrifugeConnectHandler>)handler;
-- (void)onDisconnect:(id<CentrifugeDisconnectHandler>)handler;
-- (void)onError:(id<CentrifugeErrorHandler>)handler;
-- (void)onMessage:(id<CentrifugeMessageHandler>)handler;
-- (void)onPrivateSub:(id<CentrifugePrivateSubHandler>)handler;
-- (void)onRefresh:(id<CentrifugeRefreshHandler>)handler;
 @end
 
+/**
+ * HistoryData ...
+ */
 @interface CentrifugeHistoryData : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
 
 - (instancetype)initWithRef:(id)ref;
 - (instancetype)init;
+/**
+ * ItemAt to get Publication by index.
+ */
 - (CentrifugePublication*)itemAt:(long)i;
+/**
+ * NumItems to get total number of Publication items in collection.
+ */
 - (long)numItems;
 @end
 
+/**
+ * JoinEvent has info about user who joined channel.
+ */
 @interface CentrifugeJoinEvent : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
@@ -246,6 +317,9 @@
 - (void)setChanInfo:(NSData*)v;
 @end
 
+/**
+ * LeaveEvent has info about user who left channel.
+ */
 @interface CentrifugeLeaveEvent : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
@@ -262,6 +336,9 @@
 - (void)setChanInfo:(NSData*)v;
 @end
 
+/**
+ * MessageEvent is an event for async message from server to client.
+ */
 @interface CentrifugeMessageEvent : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
@@ -272,28 +349,57 @@
 - (void)setData:(NSData*)v;
 @end
 
+/**
+ * PresenceData contains presence information for channel.
+ */
 @interface CentrifugePresenceData : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
 
 - (instancetype)initWithRef:(id)ref;
 - (instancetype)init;
+/**
+ * ItemAt to get ClientInfo by index.
+ */
 - (CentrifugeClientInfo*)itemAt:(long)i;
+/**
+ * NumItems to get total number of ClientInfo items in collection.
+ */
 - (long)numItems;
 @end
 
+/**
+ * PresenceStats ...
+ */
+@interface CentrifugePresenceStats : NSObject <goSeqRefInterface> {
+}
+@property(strong, readonly) id _ref;
+
+- (instancetype)initWithRef:(id)ref;
+- (instancetype)init;
+- (long)numClients;
+- (void)setNumClients:(long)v;
+- (long)numUsers;
+- (void)setNumUsers:(long)v;
+@end
+
+/**
+ * PrivateSign confirmes that client can subscribe on private channel.
+ */
 @interface CentrifugePrivateSign : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
 
 - (instancetype)initWithRef:(id)ref;
 - (instancetype)init;
-- (NSString*)sign;
-- (void)setSign:(NSString*)v;
-- (NSString*)info;
-- (void)setInfo:(NSString*)v;
+- (NSString*)token;
+- (void)setToken:(NSString*)v;
 @end
 
+/**
+ * PrivateSubEvent contains info required to create PrivateSign when client
+wants to subscribe on private channel.
+ */
 @interface CentrifugePrivateSubEvent : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
@@ -306,6 +412,9 @@
 - (void)setChannel:(NSString*)v;
 @end
 
+/**
+ * Publication ...
+ */
 @interface CentrifugePublication : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
@@ -320,6 +429,9 @@
 - (void)setInfo:(CentrifugeClientInfo*)v;
 @end
 
+/**
+ * PublishEvent has info about received channel Publication.
+ */
 @interface CentrifugePublishEvent : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
@@ -334,6 +446,10 @@
 - (void)setInfo:(CentrifugeClientInfo*)v;
 @end
 
+/**
+ * SubscribeErrorEvent is a subscribe error event context passed to
+event callback.
+ */
 @interface CentrifugeSubscribeErrorEvent : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
@@ -344,6 +460,10 @@
 - (void)setError:(NSString*)v;
 @end
 
+/**
+ * SubscribeSuccessEvent is a subscribe success event context passed
+to event callback.
+ */
 @interface CentrifugeSubscribeSuccessEvent : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
@@ -356,34 +476,68 @@
 - (void)setRecovered:(BOOL)v;
 @end
 
+/**
+ * Subscription describes client subscription to channel.
+ */
 @interface CentrifugeSubscription : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
 
 - (instancetype)initWithRef:(id)ref;
 - (instancetype)init;
+/**
+ * Channel returns subscription channel.
+ */
 - (NSString*)channel;
+/**
+ * History allows to extract channel history.
+ */
 - (CentrifugeHistoryData*)history:(NSError**)error;
-- (CentrifugePresenceData*)presence:(NSError**)error;
-- (BOOL)publish:(NSData*)data error:(NSError**)error;
-- (BOOL)subscribe:(NSError**)error;
-- (BOOL)unsubscribe:(NSError**)error;
-@end
-
-@interface CentrifugeSubscriptionEventHub : NSObject <goSeqRefInterface> {
-}
-@property(strong, readonly) id _ref;
-
-- (instancetype)initWithRef:(id)ref;
-- (instancetype)init;
 - (void)onJoin:(id<CentrifugeJoinHandler>)handler;
 - (void)onLeave:(id<CentrifugeLeaveHandler>)handler;
 - (void)onPublish:(id<CentrifugePublishHandler>)handler;
 - (void)onSubscribeError:(id<CentrifugeSubscribeErrorHandler>)handler;
 - (void)onSubscribeSuccess:(id<CentrifugeSubscribeSuccessHandler>)handler;
 - (void)onUnsubscribe:(id<CentrifugeUnsubscribeHandler>)handler;
+/**
+ * Presence allows to extract presence information for channel.
+ */
+- (CentrifugePresenceData*)presence:(NSError**)error;
+/**
+ * PresenceStats allows to extract presence stats information for channel.
+ */
+- (CentrifugePresenceStats*)presenceStats:(NSError**)error;
+/**
+ * Publish allows to publish JSON encoded data to subscription channel.
+ */
+- (BOOL)publish:(NSData*)data error:(NSError**)error;
+/**
+ * Subscribe allows to subscribe again after unsubscribing.
+ */
+- (BOOL)subscribe:(NSError**)error;
+/**
+ * Unsubscribe allows to unsubscribe from channel.
+ */
+- (BOOL)unsubscribe:(NSError**)error;
 @end
 
+/**
+ * SubscriptionEventHub ...
+ */
+@interface CentrifugeSubscriptionEventHub : NSObject <goSeqRefInterface> {
+}
+@property(strong, readonly) id _ref;
+
+- (instancetype)initWithRef:(id)ref;
+/**
+ * NewSubscriptionEventHub initializes new SubscriptionEventHub.
+ */
+- (instancetype)init;
+@end
+
+/**
+ * UnsubscribeEvent is an event passed to unsubscribe event handler.
+ */
 @interface CentrifugeUnsubscribeEvent : NSObject <goSeqRefInterface> {
 }
 @property(strong, readonly) id _ref;
@@ -392,25 +546,41 @@
 - (instancetype)init;
 @end
 
+/**
+ * Config defaults.
+ */
 FOUNDATION_EXPORT const int64_t CentrifugeDefaultPingIntervalMilliseconds;
+/**
+ * Config defaults.
+ */
 FOUNDATION_EXPORT NSString* const CentrifugeDefaultPrivateChannelPrefix;
+/**
+ * Config defaults.
+ */
 FOUNDATION_EXPORT const int64_t CentrifugeDefaultReadTimeoutMilliseconds;
+/**
+ * Config defaults.
+ */
 FOUNDATION_EXPORT const int64_t CentrifugeDefaultWriteTimeoutMilliseconds;
 
+/**
+ * DefaultConfig returns Config with default options.
+ */
 FOUNDATION_EXPORT CentrifugeConfig* CentrifugeDefaultConfig(void);
 
-FOUNDATION_EXPORT NSString* CentrifugeExp(long ttlSeconds);
+/**
+ * New initializes Client.
+ */
+FOUNDATION_EXPORT CentrifugeClient* CentrifugeNew(NSString* u, CentrifugeConfig* config);
 
-FOUNDATION_EXPORT NSString* CentrifugeGenerateChannelSign(NSString* secret, NSString* client, NSString* channel, NSString* channelData);
-
-FOUNDATION_EXPORT NSString* CentrifugeGenerateClientSign(NSString* secret, NSString* user, NSString* exp, NSString* info);
-
-FOUNDATION_EXPORT CentrifugeClient* CentrifugeNew(NSString* u, CentrifugeEventHub* events, CentrifugeConfig* config);
-
-FOUNDATION_EXPORT CentrifugeCredentials* CentrifugeNewCredentials(NSString* user, NSString* exp, NSString* info, NSString* sign);
-
+/**
+ * NewEventHub ...
+ */
 FOUNDATION_EXPORT CentrifugeEventHub* CentrifugeNewEventHub(void);
 
+/**
+ * NewSubscriptionEventHub initializes new SubscriptionEventHub.
+ */
 FOUNDATION_EXPORT CentrifugeSubscriptionEventHub* CentrifugeNewSubscriptionEventHub(void);
 
 @class CentrifugeConnectHandler;
@@ -437,6 +607,9 @@ FOUNDATION_EXPORT CentrifugeSubscriptionEventHub* CentrifugeNewSubscriptionEvent
 
 @class CentrifugeUnsubscribeHandler;
 
+/**
+ * ConnectHandler is an interface describing how to handle connect event.
+ */
 @interface CentrifugeConnectHandler : NSObject <goSeqRefInterface, CentrifugeConnectHandler> {
 }
 @property(strong, readonly) id _ref;
@@ -445,6 +618,9 @@ FOUNDATION_EXPORT CentrifugeSubscriptionEventHub* CentrifugeNewSubscriptionEvent
 - (void)onConnect:(CentrifugeClient*)p0 p1:(CentrifugeConnectEvent*)p1;
 @end
 
+/**
+ * DisconnectHandler is an interface describing how to handle disconnect event.
+ */
 @interface CentrifugeDisconnectHandler : NSObject <goSeqRefInterface, CentrifugeDisconnectHandler> {
 }
 @property(strong, readonly) id _ref;
@@ -453,6 +629,9 @@ FOUNDATION_EXPORT CentrifugeSubscriptionEventHub* CentrifugeNewSubscriptionEvent
 - (void)onDisconnect:(CentrifugeClient*)p0 p1:(CentrifugeDisconnectEvent*)p1;
 @end
 
+/**
+ * ErrorHandler is an interface describing how to handle error event.
+ */
 @interface CentrifugeErrorHandler : NSObject <goSeqRefInterface, CentrifugeErrorHandler> {
 }
 @property(strong, readonly) id _ref;
@@ -461,6 +640,9 @@ FOUNDATION_EXPORT CentrifugeSubscriptionEventHub* CentrifugeNewSubscriptionEvent
 - (void)onError:(CentrifugeClient*)p0 p1:(CentrifugeErrorEvent*)p1;
 @end
 
+/**
+ * JoinHandler is a function to handle join messages.
+ */
 @interface CentrifugeJoinHandler : NSObject <goSeqRefInterface, CentrifugeJoinHandler> {
 }
 @property(strong, readonly) id _ref;
@@ -469,6 +651,9 @@ FOUNDATION_EXPORT CentrifugeSubscriptionEventHub* CentrifugeNewSubscriptionEvent
 - (void)onJoin:(CentrifugeSubscription*)p0 p1:(CentrifugeJoinEvent*)p1;
 @end
 
+/**
+ * LeaveHandler is a function to handle leave messages.
+ */
 @interface CentrifugeLeaveHandler : NSObject <goSeqRefInterface, CentrifugeLeaveHandler> {
 }
 @property(strong, readonly) id _ref;
@@ -477,6 +662,9 @@ FOUNDATION_EXPORT CentrifugeSubscriptionEventHub* CentrifugeNewSubscriptionEvent
 - (void)onLeave:(CentrifugeSubscription*)p0 p1:(CentrifugeLeaveEvent*)p1;
 @end
 
+/**
+ * MessageHandler is an interface describing how to async message from server.
+ */
 @interface CentrifugeMessageHandler : NSObject <goSeqRefInterface, CentrifugeMessageHandler> {
 }
 @property(strong, readonly) id _ref;
@@ -485,14 +673,21 @@ FOUNDATION_EXPORT CentrifugeSubscriptionEventHub* CentrifugeNewSubscriptionEvent
 - (void)onMessage:(CentrifugeClient*)p0 p1:(CentrifugeMessageEvent*)p1;
 @end
 
+/**
+ * PrivateSubHandler is an interface describing how to handle private subscription request.
+ */
 @interface CentrifugePrivateSubHandler : NSObject <goSeqRefInterface, CentrifugePrivateSubHandler> {
 }
 @property(strong, readonly) id _ref;
 
 - (instancetype)initWithRef:(id)ref;
-- (CentrifugePrivateSign*)onPrivateSub:(CentrifugeClient*)p0 p1:(CentrifugePrivateSubEvent*)p1 error:(NSError**)error;
+- (NSString*)onPrivateSub:(CentrifugeClient*)p0 p1:(CentrifugePrivateSubEvent*)p1 error:(NSError**)error;
 @end
 
+/**
+ * PublishHandler is a function to handle messages published in
+channels.
+ */
 @interface CentrifugePublishHandler : NSObject <goSeqRefInterface, CentrifugePublishHandler> {
 }
 @property(strong, readonly) id _ref;
@@ -501,14 +696,20 @@ FOUNDATION_EXPORT CentrifugeSubscriptionEventHub* CentrifugeNewSubscriptionEvent
 - (void)onPublish:(CentrifugeSubscription*)p0 p1:(CentrifugePublishEvent*)p1;
 @end
 
+/**
+ * RefreshHandler is an interface describing how to handle credentials refresh event.
+ */
 @interface CentrifugeRefreshHandler : NSObject <goSeqRefInterface, CentrifugeRefreshHandler> {
 }
 @property(strong, readonly) id _ref;
 
 - (instancetype)initWithRef:(id)ref;
-- (CentrifugeCredentials*)onRefresh:(CentrifugeClient*)p0 error:(NSError**)error;
+- (NSString*)onRefresh:(CentrifugeClient*)p0 error:(NSError**)error;
 @end
 
+/**
+ * SubscribeErrorHandler is a function to handle subscribe error event.
+ */
 @interface CentrifugeSubscribeErrorHandler : NSObject <goSeqRefInterface, CentrifugeSubscribeErrorHandler> {
 }
 @property(strong, readonly) id _ref;
@@ -517,6 +718,10 @@ FOUNDATION_EXPORT CentrifugeSubscriptionEventHub* CentrifugeNewSubscriptionEvent
 - (void)onSubscribeError:(CentrifugeSubscription*)p0 p1:(CentrifugeSubscribeErrorEvent*)p1;
 @end
 
+/**
+ * SubscribeSuccessHandler is a function to handle subscribe success
+event.
+ */
 @interface CentrifugeSubscribeSuccessHandler : NSObject <goSeqRefInterface, CentrifugeSubscribeSuccessHandler> {
 }
 @property(strong, readonly) id _ref;
@@ -525,6 +730,9 @@ FOUNDATION_EXPORT CentrifugeSubscriptionEventHub* CentrifugeNewSubscriptionEvent
 - (void)onSubscribeSuccess:(CentrifugeSubscription*)p0 p1:(CentrifugeSubscribeSuccessEvent*)p1;
 @end
 
+/**
+ * UnsubscribeHandler is a function to handle unsubscribe event.
+ */
 @interface CentrifugeUnsubscribeHandler : NSObject <goSeqRefInterface, CentrifugeUnsubscribeHandler> {
 }
 @property(strong, readonly) id _ref;

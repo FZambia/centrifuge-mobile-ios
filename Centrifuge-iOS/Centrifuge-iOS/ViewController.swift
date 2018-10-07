@@ -48,7 +48,7 @@ class PublishHandler : NSObject, CentrifugePublishHandlerProtocol {
         DispatchQueue.main.async{
             let data = p1.data()
             if let string = String(data: data!, encoding: .utf8) {
-                self.l.text = string
+                self.l.text = p0.channel() + ":" + string
             } else {
                 self.l.text = "error decoding Publication bytes"
             }
@@ -67,23 +67,20 @@ class ViewController: UIViewController {
         label.text = "Connecting..."
         
         DispatchQueue.global(qos: .background).async {
-//            let creds = CentrifugeNewCredentials(...)
-            
-            let eventHandler = CentrifugeNewEventHub()
+
             let connectHandler = ConnectHandler()
             connectHandler.setLabel(l: self.label)
             let disconnectHandler = DisconnectHandler()
             disconnectHandler.setLabel(l: self.label)
-            
-            eventHandler?.onConnect(connectHandler)
-            eventHandler?.onDisconnect(disconnectHandler)
-            
+
             let url = "ws://localhost:8000/connection/websocket"
 //            let url = "ws://localhost:8000/connection/websocket?format=protobuf"
-//            let url = "grpc://localhost:8001"
             
-            let client = CentrifugeNew(url, eventHandler, CentrifugeDefaultConfig())
-//            client?.setCredentials(creds)
+            let client = CentrifugeNew(url, CentrifugeDefaultConfig())
+//            client?.setToken("???")
+            
+            client?.onConnect(connectHandler)
+            client?.onDisconnect(disconnectHandler)
             
             do {
                 try client?.connect()
@@ -92,14 +89,22 @@ class ViewController: UIViewController {
                 return
             }
 
-            let subEventHandler = CentrifugeNewSubscriptionEventHub()
-            let publishHandler = PublishHandler()
-            publishHandler.setLabel(l: self.label)
-            subEventHandler?.onPublish(publishHandler)
-            
             var sub: CentrifugeSubscription!
             do {
-                sub = try client?.subscribe("chat:index", events: subEventHandler)
+                sub = try client?.newSubscription("chat:index")
+            } catch {
+                DispatchQueue.main.async{
+                    self.label.text = "Subscription create error"
+                }
+                return
+            }
+            
+            let publishHandler = PublishHandler()
+            publishHandler.setLabel(l: self.label)
+            sub?.onPublish(publishHandler)
+            
+            do {
+                try sub?.subscribe()
             } catch {
                 DispatchQueue.main.async{
                     self.label.text = "Subscribe error"
